@@ -1,0 +1,121 @@
+	<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    h2 { color: #333; }
+
+    select, button {
+      padding: 8px;
+      margin: 5px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: center;
+    }
+
+    th {
+      background: #1a73e8;
+      color: white;
+    }
+
+    .btn {
+      padding: 5px 10px;
+      border: none;
+      cursor: pointer;
+    }
+
+    .shortlist { background: orange; color: white; }
+    .select { background: green; color: white; }
+    .reject { background: red; color: white; }
+  </style>
+</head>
+
+<body>
+
+<h2>Startup Dashboard</h2>
+
+<label>Select Request:</label>
+<select id="requestDropdown" onchange="loadCandidates()"></select>
+
+<table id="candidateTable">
+  <thead>
+    <tr>
+      <th>Student ID</th>
+      <th>Name</th>
+      <th>Status</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<script>
+
+function loadRequests() {
+  google.script.run.withSuccessHandler(function(data) {
+    let dropdown = document.getElementById("requestDropdown");
+    dropdown.innerHTML = "";
+
+    data.forEach(r => {
+      let opt = document.createElement("option");
+      opt.value = r[0];
+      opt.text = r[0] + " - " + r[1];
+      dropdown.appendChild(opt);
+    });
+
+    loadCandidates();
+  }).getStartupRequests();
+}
+
+function loadCandidates() {
+  const requestID = document.getElementById("requestDropdown").value;
+
+  google.script.run.withSuccessHandler(function(data) {
+    let tbody = document.querySelector("#candidateTable tbody");
+    tbody.innerHTML = "";
+
+    data.forEach(c => {
+      let row = `
+        <tr>
+          <td>${c.studentID}</td>
+          <td>${c.name}</td>
+          <td>${c.status}</td>
+          <td>
+            <button class="btn shortlist" onclick="update('${c.selectionID}','SHORTLISTED')">Shortlist</button>
+            <button class="btn select" onclick="update('${c.selectionID}','SELECTED')">Select</button>
+            <button class="btn reject" onclick="update('${c.selectionID}','REJECTED')">Reject</button>
+          </td>
+        </tr>
+      `;
+      tbody.innerHTML += row;
+    });
+  }).getCandidatesForRequest(requestID);
+}
+
+function update(id, status) {
+  let remarks = prompt("Enter remarks (optional):");
+
+  google.script.run
+    .withSuccessHandler(() => {
+      alert("Updated!");
+      loadCandidates();
+    })
+    .updateSelectionStatus(id, status, remarks);
+}
+
+loadRequests();
+
+</script>
+
+</body>
+</html>
